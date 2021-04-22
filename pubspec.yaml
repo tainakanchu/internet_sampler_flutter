@@ -34,11 +34,8 @@ dependencies:
   cupertino_icons: ^1.0.2
 
   # play audio
-  # audioplayers: ^0.18.1
-  # flutter_sound: ^8.1.1
   audioplayers: ^0.14.0
-
-
+  universal_html: ^1.2.4
 
 dev_dependencies:
   flutter_test:

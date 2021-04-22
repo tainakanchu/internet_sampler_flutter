@@ -1,4 +1,6 @@
-// import 'package:audioplayers/audioplayers_web.dart';
+import 'dart:html' show AudioElement, document;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_analytics/observer.dart';
@@ -119,6 +121,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
+/// サンプラー
 class Sampler {
   String sampleType;
   int times;
@@ -132,10 +135,21 @@ class Sampler {
     this.reference = snapshot.reference;
   }
 
+  /// サンプルを再生
   void play() {
-    String filename = "$sampleType.wav";
-
-    final player = AudioCache();
-    player.play(filename);
+    if (kIsWeb) {
+      // webの場合はAudioElementsで再生
+      String url = "./assets/assets/$sampleType.wav";
+      var audioElement = AudioElement();
+      audioElement.id = sampleType;
+      audioElement.src = url;
+      document.body.append(audioElement);
+      audioElement.play();
+    } else {
+      // ネイティブの場合はAudioCacheで再生
+      String filename = "$sampleType.wav";
+      final player = AudioCache();
+      player.play(filename);
+    }
   }
 }
