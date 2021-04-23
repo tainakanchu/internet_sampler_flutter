@@ -79,9 +79,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget _buildList(List<DocumentSnapshot> snapshots) {
     if (_samplers.length == 0) {
       // サンプラーの初期化
-      for (final data in snapshots) {
-        _samplers.add(Sampler(data));
-      }
+      _initSampler(snapshots);
     } else {
       // サンプル種類ごとにf確認
       for (final snapshot in snapshots) {
@@ -115,6 +113,13 @@ class _MyHomePageState extends State<MyHomePage> {
         return _buildListItem(data);
       }).toList(),
     );
+  }
+
+  /// サンプラーを初期化
+  void _initSampler(List<DocumentSnapshot> snapshots) {
+    for (final data in snapshots) {
+      _samplers.add(Sampler(data));
+    }
   }
 
   Widget _buildListItem(DocumentSnapshot data) {
@@ -179,12 +184,7 @@ class Sampler {
   /// DocumentReference
   DocumentReference reference;
 
-  /// 音声再生用インスタンス (ネイティブ)
-  final AudioCache _player = AudioCache();
-
-  /// 音声再生用 (Web)
-  final AudioElement audioElement = AudioElement();
-
+  /// snapshotを使ったコンストラクタ
   Sampler(DocumentSnapshot snapshot) {
     var map = snapshot.data();
     this.sampleType = map['type'];
@@ -206,6 +206,7 @@ class Sampler {
   void play() {
     if (kIsWeb) {
       // webの場合はAudioElementsで再生
+      final AudioElement audioElement = AudioElement();
       String url = "./assets/assets/$sampleType.wav";
       audioElement.id = sampleType;
       audioElement.src = url;
@@ -213,6 +214,7 @@ class Sampler {
       audioElement.play();
     } else {
       // ネイティブの場合はAudioCacheで再生
+      final AudioCache _player = AudioCache();
       String filename = "$sampleType.wav";
       _player.play(filename);
     }
