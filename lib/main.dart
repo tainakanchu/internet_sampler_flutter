@@ -8,7 +8,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'package:audioplayers/audio_cache.dart';
-import 'package:audioplayers/audioplayers.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +37,9 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  // サンプラーを保持する
+  final List<Sampler> _samplers = <Sampler>[];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,20 +75,59 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget _buildList(List<DocumentSnapshot> snapshot) {
+  /// 取得したスナップショットからサンプラーボタンを作る
+  Widget _buildList(List<DocumentSnapshot> snapshots) {
+    if (_samplers.length == 0) {
+      // サンプラーの初期化
+      for (final data in snapshots) {
+        _samplers.add(Sampler(data));
+      }
+    } else {
+      // サンプル種類ごとにf確認
+      for (final snapshot in snapshots) {
+        // 再生数の更新があったサンプルをならす
+        Sampler playSampler;
+        try {
+          playSampler = _samplers
+              .where((sampler) => sampler.sampleType == snapshot.data()["type"])
+              .toList()
+              .first;
+
+          // 再生数がローカルと変わっていて、かつ0でなかったら再生
+          if (playSampler.times != snapshot.data()["times"] &&
+              snapshot.data()["times"] != 0) {
+            playSampler.play();
+          }
+        } catch (e) {
+          // nop
+        } finally {
+          // 全てのサンプルのローカルの値をサーバーの値と同期
+          if (playSampler != null) {
+            playSampler.times = snapshot.data()["times"];
+          }
+        }
+      }
+    }
+
     return ListView(
       padding: const EdgeInsets.only(top: 20.0),
-      children: snapshot.map((data) {
+      children: snapshots.map((data) {
         return _buildListItem(data);
       }).toList(),
     );
   }
 
   Widget _buildListItem(DocumentSnapshot data) {
-    final sampler = Sampler(data);
-
-    if (sampler.times > 0) {
-      sampler.play();
+    // 目的のサンプラーを取得する
+    Sampler sampler;
+    if (_samplers.length > 0) {
+      sampler = _samplers
+          .where((element) => element.sampleType == data.data()["type"])
+          .toList()
+          .first;
+    } else {
+      // フェールセーフ
+      return LinearProgressIndicator();
     }
 
     return Padding(
@@ -97,25 +138,31 @@ class _MyHomePageState extends State<MyHomePage> {
           borderRadius: BorderRadius.circular(6.0),
         ),
         child: ListTile(
-            title: Text(sampler.sampleType),
-            trailing: OutlinedButton(
-              onPressed: () {
-                sampler.reference.update({'times': 0});
-              },
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Icon(
-                    Icons.delete,
-                  ),
-                  Text(sampler.times.toString()),
-                ],
-              ),
+          title: Text(sampler.sampleType),
+          trailing: OutlinedButton(
+            onPressed: () {
+              // 再生回数をリセット
+              sampler.reference.update({'times': 0});
+              sampler.reset();
+            },
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Icon(
+                  Icons.delete,
+                ),
+                Text(sampler.times.toString()),
+              ],
             ),
-            onTap: () {
-              sampler.reference.update({'times': FieldValue.increment(1)});
-              // sampler.play();
-            }),
+          ),
+          onTap: () {
+            // firebase側をincrement
+            sampler.reference.update({'times': FieldValue.increment(1)});
+            // 再生して再生数をインクリメント
+            sampler.play();
+            sampler.increment();
+          },
+        ),
       ),
     );
   }
@@ -123,10 +170,20 @@ class _MyHomePageState extends State<MyHomePage> {
 
 /// サンプラー
 class Sampler {
+  /// サンプルの種類
   String sampleType;
+
+  /// 押された回数
   int times;
+
+  /// DocumentReference
   DocumentReference reference;
-  AudioPlayer audioPlayer = AudioPlayer(mode: PlayerMode.LOW_LATENCY);
+
+  /// 音声再生用インスタンス (ネイティブ)
+  final AudioCache _player = AudioCache();
+
+  /// 音声再生用 (Web)
+  final AudioElement audioElement = AudioElement();
 
   Sampler(DocumentSnapshot snapshot) {
     var map = snapshot.data();
@@ -135,12 +192,21 @@ class Sampler {
     this.reference = snapshot.reference;
   }
 
+  /// 再生数をインクリメント
+  void increment() {
+    this.times++;
+  }
+
+  /// 再生数をリセット
+  void reset() {
+    this.times = 0;
+  }
+
   /// サンプルを再生
   void play() {
     if (kIsWeb) {
       // webの場合はAudioElementsで再生
       String url = "./assets/assets/$sampleType.wav";
-      var audioElement = AudioElement();
       audioElement.id = sampleType;
       audioElement.src = url;
       document.body.append(audioElement);
@@ -148,8 +214,7 @@ class Sampler {
     } else {
       // ネイティブの場合はAudioCacheで再生
       String filename = "$sampleType.wav";
-      final player = AudioCache();
-      player.play(filename);
+      _player.play(filename);
     }
   }
 }
