@@ -83,26 +83,17 @@ class _MyHomePageState extends State<MyHomePage> {
     } else {
       // サンプル種類ごとにf確認
       for (final snapshot in snapshots) {
-        // 再生数の更新があったサンプルをならす
-        Sampler playSampler;
-        try {
-          playSampler = _samplers
-              .where((sampler) => sampler.sampleType == snapshot.data()["type"])
-              .toList()
-              .first;
+        // サンプラー取得
+        Sampler sampler = _searchSampler(snapshot.data()["type"]);
 
+        if (sampler != null) {
           // 再生数がローカルと変わっていて、かつ0でなかったら再生
-          if (playSampler.times != snapshot.data()["times"] &&
+          if (sampler.times != snapshot.data()["times"] &&
               snapshot.data()["times"] != 0) {
-            playSampler.play();
+            sampler.play();
           }
-        } catch (e) {
-          // nop
-        } finally {
-          // 全てのサンプルのローカルの値をサーバーの値と同期
-          if (playSampler != null) {
-            playSampler.times = snapshot.data()["times"];
-          }
+          // サンプラーののローカルの値をサーバーの値と同期
+          sampler.times = snapshot.data()["times"];
         }
       }
     }
@@ -122,15 +113,30 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Widget _buildListItem(DocumentSnapshot data) {
-    // 目的のサンプラーを取得する
-    Sampler sampler;
-    if (_samplers.length > 0) {
-      sampler = _samplers
-          .where((element) => element.sampleType == data.data()["type"])
+  /// サンプラーの名前から目的のサンプラーを取得
+  Sampler _searchSampler(String sampleType) {
+    if (_samplers.length == 0) {
+      return null;
+    }
+
+    try {
+      final returnSampler = _samplers
+          .where((sampler) => sampler.sampleType == sampleType)
           .toList()
           .first;
-    } else {
+
+      return returnSampler;
+    } catch (e) {
+      // 見つからなかった場合はnull
+      return null;
+    }
+  }
+
+  Widget _buildListItem(DocumentSnapshot data) {
+    // サンプラーのタイプを指定して取得
+    Sampler sampler = _searchSampler(data.data()["type"]);
+
+    if (sampler == null) {
       // フェールセーフ
       return LinearProgressIndicator();
     }
