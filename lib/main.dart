@@ -7,7 +7,7 @@ import 'package:firebase_analytics/observer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 
-import 'package:audioplayers/audio_cache.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -83,17 +83,18 @@ class _MyHomePageState extends State<MyHomePage> {
     } else {
       // サンプル種類ごとにf確認
       for (final snapshot in snapshots) {
+        Map snapshotData = snapshot.data();
         // サンプラー取得
-        Sampler sampler = _searchSampler(snapshot.data()["type"]);
+        Sampler sampler = _searchSampler(snapshotData["type"]);
 
         if (sampler != null) {
           // 再生数がローカルと変わっていて、かつ0でなかったら再生
-          if (sampler.times != snapshot.data()["times"] &&
-              snapshot.data()["times"] != 0) {
+          if (sampler.times != snapshotData["times"] &&
+              snapshotData["times"] != 0) {
             sampler.play();
           }
           // サンプラーののローカルの値をサーバーの値と同期
-          sampler.times = snapshot.data()["times"];
+          sampler.times = snapshotData["times"];
         }
       }
     }
@@ -139,9 +140,10 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Widget _buildListItem(DocumentSnapshot data) {
+  Widget _buildListItem(DocumentSnapshot snapshot) {
+    Map snapshotData = snapshot.data();
     // サンプラーのタイプを指定して取得
-    Sampler sampler = _searchSampler(data.data()["type"]);
+    Sampler sampler = _searchSampler(snapshotData["type"]);
 
     if (sampler == null) {
       // フェールセーフ
@@ -152,7 +154,8 @@ class _MyHomePageState extends State<MyHomePage> {
       padding: EdgeInsets.all(8.0),
       child: Container(
         width: MediaQuery.of(context).size.shortestSide * 0.6,
-        height: MediaQuery.of(context).size.longestSide / (_samplers.length + 1),
+        height:
+            MediaQuery.of(context).size.longestSide / (_samplers.length + 1),
         decoration: BoxDecoration(
           border: Border.all(color: Colors.grey),
           borderRadius: BorderRadius.circular(6.0),
@@ -201,9 +204,9 @@ class Sampler {
 
   /// snapshotを使ったコンストラクタ
   Sampler(DocumentSnapshot snapshot) {
-    var map = snapshot.data();
-    this.sampleType = map['type'];
-    this.times = map['times'];
+    Map snapshotData = snapshot.data();
+    this.sampleType = snapshotData['type'];
+    this.times = snapshotData['times'];
     this.reference = snapshot.reference;
   }
 
