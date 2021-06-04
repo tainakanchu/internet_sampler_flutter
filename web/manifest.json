@@ -1,11 +1,11 @@
 {
-    "name": "internet_sampler_for_flutter",
-    "short_name": "internet_sampler_for_flutter",
+    "name": "Internet Sampler",
+    "short_name": "🌎Sampler",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#3F444C",
     "theme_color": "#3F444C",
-    "description": "A new Flutter project.",
+    "description": "Sampler as a Service.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
