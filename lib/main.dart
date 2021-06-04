@@ -150,12 +150,18 @@ class _MyHomePageState extends State<MyHomePage> {
       return LinearProgressIndicator();
     }
 
+    bool isLandscape =
+        MediaQuery.of(context).size.width > MediaQuery.of(context).size.height;
+
     return Padding(
       padding: EdgeInsets.all(8.0),
       child: Container(
-        width: MediaQuery.of(context).size.shortestSide * 0.6,
-        height:
-            MediaQuery.of(context).size.longestSide / (_samplers.length + 1),
+        width: isLandscape
+            ? MediaQuery.of(context).size.longestSide / (_samplers.length + 1)
+            : MediaQuery.of(context).size.shortestSide,
+        height: isLandscape
+            ? MediaQuery.of(context).size.shortestSide * 0.6
+            : MediaQuery.of(context).size.longestSide / (_samplers.length + 1),
         decoration: BoxDecoration(
           border: Border.all(color: Colors.grey),
           borderRadius: BorderRadius.circular(6.0),
