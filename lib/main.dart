@@ -7,7 +7,7 @@ import 'package:firebase_analytics/observer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 
-import 'package:audioplayers/audio_cache.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,9 +28,9 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+  MyHomePage({Key? key, this.title}) : super(key: key);
 
-  final String title;
+  final String? title;
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
@@ -44,7 +44,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(widget.title ?? 'Internet Sampler'),
       ),
       body: _buildBody(),
     );
@@ -83,17 +83,18 @@ class _MyHomePageState extends State<MyHomePage> {
     } else {
       // サンプル種類ごとにf確認
       for (final snapshot in snapshots) {
+        Map snapshotData = snapshot.data() as Map<dynamic, dynamic>;
         // サンプラー取得
-        Sampler sampler = _searchSampler(snapshot.data()["type"]);
+        Sampler? sampler = _searchSampler(snapshotData["type"]);
 
         if (sampler != null) {
           // 再生数がローカルと変わっていて、かつ0でなかったら再生
-          if (sampler.times != snapshot.data()["times"] &&
-              snapshot.data()["times"] != 0) {
+          if (sampler.times != snapshotData["times"] &&
+              snapshotData["times"] != 0) {
             sampler.play();
           }
           // サンプラーののローカルの値をサーバーの値と同期
-          sampler.times = snapshot.data()["times"];
+          sampler.times = snapshotData["times"];
         }
       }
     }
@@ -121,8 +122,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   /// サンプラーの名前から目的のサンプラーを取得
-  Sampler _searchSampler(String sampleType) {
-    if (_samplers.length == 0) {
+  Sampler? _searchSampler(String? sampleType) {
+    if (_samplers.length == 0 || sampleType == null) {
       return null;
     }
 
@@ -139,9 +140,10 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Widget _buildListItem(DocumentSnapshot data) {
+  Widget _buildListItem(DocumentSnapshot snapshot) {
+    Map snapshotData = snapshot.data() as Map<dynamic, dynamic>;
     // サンプラーのタイプを指定して取得
-    Sampler sampler = _searchSampler(data.data()["type"]);
+    Sampler? sampler = _searchSampler(snapshotData["type"]);
 
     if (sampler == null) {
       // フェールセーフ
@@ -152,7 +154,8 @@ class _MyHomePageState extends State<MyHomePage> {
       padding: EdgeInsets.all(8.0),
       child: Container(
         width: MediaQuery.of(context).size.shortestSide * 0.6,
-        height: MediaQuery.of(context).size.longestSide / (_samplers.length + 1),
+        height:
+            MediaQuery.of(context).size.longestSide / (_samplers.length + 1),
         decoration: BoxDecoration(
           border: Border.all(color: Colors.grey),
           borderRadius: BorderRadius.circular(6.0),
@@ -191,19 +194,19 @@ class _MyHomePageState extends State<MyHomePage> {
 /// サンプラー
 class Sampler {
   /// サンプルの種類
-  String sampleType;
+  late String sampleType;
 
   /// 押された回数
-  int times;
+  late int times;
 
   /// DocumentReference
-  DocumentReference reference;
+  late DocumentReference reference;
 
   /// snapshotを使ったコンストラクタ
   Sampler(DocumentSnapshot snapshot) {
-    var map = snapshot.data();
-    this.sampleType = map['type'];
-    this.times = map['times'];
+    Map snapshotData = snapshot.data() as Map<dynamic, dynamic>;
+    this.sampleType = snapshotData['type'];
+    this.times = snapshotData['times'];
     this.reference = snapshot.reference;
   }
 
@@ -225,7 +228,7 @@ class Sampler {
       String url = "./assets/assets/$sampleType.wav";
       audioElement.id = sampleType;
       audioElement.src = url;
-      document.body.append(audioElement);
+      document.body?.append(audioElement);
       audioElement.play();
     } else {
       // ネイティブの場合はAudioCacheで再生
