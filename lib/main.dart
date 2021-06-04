@@ -98,11 +98,18 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
 
-    return ListView(
-      padding: const EdgeInsets.only(top: 20.0),
-      children: snapshots.map((data) {
-        return _buildListItem(data);
-      }).toList(),
+    return Container(
+      padding: EdgeInsets.all(16.0),
+      constraints: BoxConstraints.expand(),
+      child: Center(
+        child: Wrap(
+          spacing: 16.0,
+          alignment: WrapAlignment.spaceAround,
+          children: snapshots.map((data) {
+            return _buildListItem(data);
+          }).toList(),
+        ),
+      ),
     );
   }
 
@@ -142,37 +149,39 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      padding: EdgeInsets.all(8.0),
       child: Container(
+        width: MediaQuery.of(context).size.shortestSide * 0.6,
+        height: MediaQuery.of(context).size.longestSide / (_samplers.length + 1),
         decoration: BoxDecoration(
           border: Border.all(color: Colors.grey),
           borderRadius: BorderRadius.circular(6.0),
         ),
-        child: ListTile(
-          title: Text(sampler.sampleType),
-          trailing: OutlinedButton(
-            onPressed: () {
-              // 再生回数をリセット
-              sampler.reference.update({'times': 0});
-              sampler.reset();
-            },
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Icon(
-                  Icons.delete,
-                ),
-                Text(sampler.times.toString()),
-              ],
-            ),
-          ),
-          onTap: () {
+        child: OutlinedButton(
+          onPressed: () {
             // firebase側をincrement
             sampler.reference.update({'times': FieldValue.increment(1)});
             // 再生して再生数をインクリメント
             sampler.play();
             sampler.increment();
           },
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              FittedBox(
+                  fit: BoxFit.fitWidth,
+                  child: Text(
+                    sampler.sampleType,
+                    style: TextStyle(fontSize: 30),
+                    // textScaleFactor: 5,
+                  )),
+              Icon(
+                Icons.speaker,
+                size: 50,
+              ),
+              Text(sampler.times.toString()),
+            ],
+          ),
         ),
       ),
     );
