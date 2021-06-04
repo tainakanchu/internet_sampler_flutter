@@ -14,12 +14,26 @@ void main() {
   runApp(MyApp());
 }
 
+// テーマを定義
+var myTheme = ThemeData.dark().copyWith(
+  primaryColor: Color(0xff454545),
+  primaryTextTheme: const TextTheme().copyWith(
+    headline6: TextStyle().copyWith(
+      color: Color(0xffF39067),
+      fontWeight: FontWeight.bold,
+    ),
+  ),
+  accentColor: Color(0xff454545),
+  scaffoldBackgroundColor: Color(0xff3F444C),
+);
+
 class MyApp extends StatelessWidget {
   static FirebaseAnalytics analytics = FirebaseAnalytics();
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: MyHomePage(title: 'Internet Sampler'),
+      theme: myTheme,
       navigatorObservers: [
         FirebaseAnalyticsObserver(analytics: analytics),
       ],
@@ -40,12 +54,14 @@ class _MyHomePageState extends State<MyHomePage> {
   // サンプラーを保持する
   final List<Sampler> _samplers = <Sampler>[];
 
+  final AppBar _appbar = AppBar(
+    title: Text('Internet Sampler'),
+  );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title ?? 'Internet Sampler'),
-      ),
+      appBar: _appbar,
       body: _buildBody(),
     );
   }
@@ -70,13 +86,13 @@ class _MyHomePageState extends State<MyHomePage> {
         if (!snapshot.hasData) {
           return LinearProgressIndicator();
         }
-        return _buildList(snapshot.data.docs);
+        return _buildPadSequence(snapshot.data.docs);
       },
     );
   }
 
   /// 取得したスナップショットからサンプラーボタンを作る
-  Widget _buildList(List<DocumentSnapshot> snapshots) {
+  Widget _buildPadSequence(List<DocumentSnapshot> snapshots) {
     if (_samplers.length == 0) {
       // サンプラーの初期化
       _initSampler(snapshots);
@@ -100,14 +116,14 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     return Container(
-      padding: EdgeInsets.all(16.0),
+      padding: EdgeInsets.all(8.0),
       constraints: BoxConstraints.expand(),
       child: Center(
         child: Wrap(
           spacing: 16.0,
           alignment: WrapAlignment.spaceAround,
           children: snapshots.map((data) {
-            return _buildListItem(data);
+            return _buildSamplerPad(data);
           }).toList(),
         ),
       ),
@@ -140,7 +156,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Widget _buildListItem(DocumentSnapshot snapshot) {
+  Widget _buildSamplerPad(DocumentSnapshot snapshot) {
     Map snapshotData = snapshot.data() as Map<dynamic, dynamic>;
     // サンプラーのタイプを指定して取得
     Sampler? sampler = _searchSampler(snapshotData["type"]);
@@ -153,20 +169,33 @@ class _MyHomePageState extends State<MyHomePage> {
     bool isLandscape =
         MediaQuery.of(context).size.width > MediaQuery.of(context).size.height;
 
+    const _buttonContentsColor = Color(0xffeeeeee);
+
     return Padding(
       padding: EdgeInsets.all(8.0),
       child: Container(
         width: isLandscape
-            ? MediaQuery.of(context).size.longestSide / (_samplers.length + 1)
+            ? MediaQuery.of(context).size.longestSide / (_samplers.length + 0.5)
             : MediaQuery.of(context).size.shortestSide,
         height: isLandscape
-            ? MediaQuery.of(context).size.shortestSide * 0.6
-            : MediaQuery.of(context).size.longestSide / (_samplers.length + 1),
+            ? (MediaQuery.of(context).size.shortestSide -
+                    _appbar.preferredSize.height) *
+                0.8
+            : (MediaQuery.of(context).size.longestSide -
+                    _appbar.preferredSize.height) /
+                (_samplers.length + 0.5),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey),
+          border: Border.all(
+            color: Color(0xffF39067),
+            width: MediaQuery.of(context).size.shortestSide * 0.017,
+          ),
           borderRadius: BorderRadius.circular(6.0),
         ),
-        child: OutlinedButton(
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            primary: Color(0xff1f1f1f),
+            onPrimary: Color(0xffF39067),
+          ),
           onPressed: () {
             // firebase側をincrement
             sampler.reference.update({'times': FieldValue.increment(1)});
@@ -178,17 +207,25 @@ class _MyHomePageState extends State<MyHomePage> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               FittedBox(
-                  fit: BoxFit.fitWidth,
-                  child: Text(
-                    sampler.sampleType,
-                    style: TextStyle(fontSize: 30),
-                    // textScaleFactor: 5,
-                  )),
+                fit: BoxFit.fitWidth,
+                child: Text(
+                  sampler.sampleType,
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    color: _buttonContentsColor,
+                  ),
+                ),
+              ),
               Icon(
                 Icons.speaker,
                 size: 50,
+                color: _buttonContentsColor,
               ),
-              Text(sampler.times.toString()),
+              Text(
+                sampler.times.toString(),
+                style: TextStyle(color: _buttonContentsColor),
+              ),
             ],
           ),
         ),
