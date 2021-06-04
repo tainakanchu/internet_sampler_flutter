@@ -28,9 +28,9 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+  MyHomePage({Key? key, this.title}) : super(key: key);
 
-  final String title;
+  final String? title;
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
@@ -44,7 +44,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(widget.title ?? 'Internet Sampler'),
       ),
       body: _buildBody(),
     );
@@ -83,9 +83,9 @@ class _MyHomePageState extends State<MyHomePage> {
     } else {
       // サンプル種類ごとにf確認
       for (final snapshot in snapshots) {
-        Map snapshotData = snapshot.data();
+        Map snapshotData = snapshot.data() as Map<dynamic, dynamic>;
         // サンプラー取得
-        Sampler sampler = _searchSampler(snapshotData["type"]);
+        Sampler? sampler = _searchSampler(snapshotData["type"]);
 
         if (sampler != null) {
           // 再生数がローカルと変わっていて、かつ0でなかったら再生
@@ -122,8 +122,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   /// サンプラーの名前から目的のサンプラーを取得
-  Sampler _searchSampler(String sampleType) {
-    if (_samplers.length == 0) {
+  Sampler? _searchSampler(String? sampleType) {
+    if (_samplers.length == 0 || sampleType == null) {
       return null;
     }
 
@@ -141,9 +141,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _buildListItem(DocumentSnapshot snapshot) {
-    Map snapshotData = snapshot.data();
+    Map snapshotData = snapshot.data() as Map<dynamic, dynamic>;
     // サンプラーのタイプを指定して取得
-    Sampler sampler = _searchSampler(snapshotData["type"]);
+    Sampler? sampler = _searchSampler(snapshotData["type"]);
 
     if (sampler == null) {
       // フェールセーフ
@@ -194,17 +194,17 @@ class _MyHomePageState extends State<MyHomePage> {
 /// サンプラー
 class Sampler {
   /// サンプルの種類
-  String sampleType;
+  late String sampleType;
 
   /// 押された回数
-  int times;
+  late int times;
 
   /// DocumentReference
-  DocumentReference reference;
+  late DocumentReference reference;
 
   /// snapshotを使ったコンストラクタ
   Sampler(DocumentSnapshot snapshot) {
-    Map snapshotData = snapshot.data();
+    Map snapshotData = snapshot.data() as Map<dynamic, dynamic>;
     this.sampleType = snapshotData['type'];
     this.times = snapshotData['times'];
     this.reference = snapshot.reference;
@@ -228,7 +228,7 @@ class Sampler {
       String url = "./assets/assets/$sampleType.wav";
       audioElement.id = sampleType;
       audioElement.src = url;
-      document.body.append(audioElement);
+      document.body?.append(audioElement);
       audioElement.play();
     } else {
       // ネイティブの場合はAudioCacheで再生
