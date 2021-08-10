@@ -1,13 +1,10 @@
-import 'dart:html' show AudioElement, document;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_analytics/observer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
-
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -239,6 +236,9 @@ class Sampler {
   /// サンプルの種類
   late String sampleType;
 
+  /// サンプルのURL (sampleType.wavで決め打ち)
+  late String sampleUrl;
+
   /// 押された回数
   late int times;
 
@@ -251,6 +251,7 @@ class Sampler {
     this.sampleType = snapshotData['type'];
     this.times = snapshotData['times'];
     this.reference = snapshot.reference;
+    this.sampleUrl = "assets/$sampleType.wav";
   }
 
   /// 再生数をインクリメント
@@ -264,20 +265,9 @@ class Sampler {
   }
 
   /// サンプルを再生
-  void play() {
-    if (kIsWeb) {
-      // webの場合はAudioElementsで再生
-      final AudioElement audioElement = AudioElement();
-      String url = "./assets/assets/$sampleType.wav";
-      audioElement.id = sampleType;
-      audioElement.src = url;
-      document.body?.append(audioElement);
-      audioElement.play();
-    } else {
-      // ネイティブの場合はAudioCacheで再生
-      final AudioCache _player = AudioCache();
-      String filename = "$sampleType.wav";
-      _player.play(filename);
-    }
+  void play() async {
+    final AudioPlayer _player = AudioPlayer();
+    await _player.setAsset(sampleUrl);
+    _player.play();
   }
 }
