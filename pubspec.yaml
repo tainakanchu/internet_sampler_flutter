@@ -35,6 +35,7 @@ dependencies:
 
   # play audio
   just_audio: ^0.9.5
+  flutter_riverpod: ^0.14.0+3
 
 dev_dependencies:
   flutter_test:
